@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Seruling Interaktif / Pipa Organa Terbuka</title>
+<style>
+body{
+    background:#0f172a;
+    color:white;
+    text-align:center;
+    font-family:Arial;
+}
+canvas{
+    background:#020617;
+    margin-top:20px;
+}
+</style>
+</head>
+<body>
+
+<h2>🎶 Pipa Organa Terbuka</h2>
+
+Panjang:
+<input type="range" id="L" min="0.2" max="1.2" step="0.01" value="0.6">
+<span id="Lval">0.60</span>
+
+<br><br>
+
+Harmonik:
+<select id="n">
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+</select>
+
+<h3 id="freq"></h3>
+
+<canvas id="c" width="800" height="220"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+let t = 0;
+const v = 340;
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    let L = parseFloat(document.getElementById("L").value);
+    let n = parseInt(document.getElementById("n").value);
+
+    let f = n*v/(2*L);
+
+    document.getElementById("freq").innerText =
+        "f = " + f.toFixed(2) + " Hz";
+    document.getElementById("Lval").innerText = L.toFixed(2);
+
+    let scale = canvas.width / L;
+
+    // batas pipa (atas bawah saja)
+    ctx.strokeStyle="#38bdf8";
+    ctx.beginPath();
+    ctx.moveTo(0,40);
+    ctx.lineTo(canvas.width,40);
+    ctx.moveTo(0,180);
+    ctx.lineTo(canvas.width,180);
+    ctx.stroke();
+
+    // 🔷 ENVELOPE (penting!)
+    ctx.beginPath();
+    for(let x=0;x<=L;x+=0.001){
+        let y = Math.abs(Math.cos(n*Math.PI*x/L));
+        let X = x*scale;
+
+        ctx.lineTo(X,110 - y*60);
+    }
+    for(let x=L;x>=0;x-=0.001){
+        let y = Math.abs(Math.cos(n*Math.PI*x/L));
+        let X = x*scale;
+
+        ctx.lineTo(X,110 + y*60);
+    }
+    ctx.strokeStyle="rgba(255,255,255,0.3)";
+    ctx.stroke();
+
+    // 🔷 GELOMBANG BERGETAR
+    ctx.beginPath();
+    for(let x=0;x<=L;x+=0.001){
+        let y = Math.cos(n*Math.PI*x/L) * Math.cos(2*Math.PI*f*t);
+        let X = x*scale;
+        let Y = 110 - y*60;
+
+        if(x===0) ctx.moveTo(X,Y);
+        else ctx.lineTo(X,Y);
+    }
+    ctx.strokeStyle="#22c55e";
+    ctx.stroke();
+
+    // 🔷 PERUT (harus nempel dinding!)
+    for(let i=0;i<=n;i++){
+        let xP = i*L/n;
+        ctx.fillStyle="yellow";
+        ctx.fillText("P", xP*scale-5, 50);
+    }
+
+    // 🔷 SIMPUL
+    for(let i=0;i<n;i++){
+        let xS = (i+0.5)*L/n;
+        ctx.fillStyle="red";
+        ctx.fillText("S", xS*scale-5, 170);
+    }
+
+    t += 0.01;
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
