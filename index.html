@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Seruling Interaktif / Pipa Organa Terbuka</title>
+<title>Seruling Interaktif Final</title>
 <style>
 body{
     background:#0f172a;
@@ -14,11 +14,21 @@ canvas{
     background:#020617;
     margin-top:20px;
 }
+button{
+    padding:8px 15px;
+    margin-top:10px;
+    font-size:16px;
+}
+.footer{
+    margin-top:15px;
+    font-size:14px;
+    color:#94a3b8;
+}
 </style>
 </head>
 <body>
 
-<h2>🎶 Pipa Organa Terbuka</h2>
+<h2>🎶 Seruling Interaktif (Pipa Organa Terbuka)</h2>
 
 Panjang:
 <input type="range" id="L" min="0.2" max="1.2" step="0.01" value="0.6">
@@ -36,7 +46,13 @@ Harmonik:
 
 <h3 id="freq"></h3>
 
-<canvas id="c" width="800" height="220"></canvas>
+<button onclick="toggleSound()">🔊 ON / OFF Suara</button>
+
+<canvas id="c" width="800" height="260"></canvas>
+
+<div class="footer">
+    Dibuat oleh: <b>Dwi Yono, S.Pd</b> — Guru Fisika SMAN 1 Karanganyar
+</div>
 
 <script>
 const canvas = document.getElementById("c");
@@ -44,6 +60,58 @@ const ctx = canvas.getContext("2d");
 
 let t = 0;
 const v = 340;
+
+// AUDIO
+let audioCtx = null;
+let oscillator = null;
+let gainNode = null;
+let isPlaying = false;
+
+function startSound(freq){
+    if(!audioCtx){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    oscillator = audioCtx.createOscillator();
+    gainNode = audioCtx.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.05);
+
+    oscillator.start();
+}
+
+function stopSound(){
+    if(oscillator && gainNode && audioCtx){
+        let now = audioCtx.currentTime;
+
+        gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.05);
+
+        oscillator.stop(now + 0.05);
+        oscillator = null;
+    }
+}
+
+function toggleSound(){
+    isPlaying = !isPlaying;
+
+    let L = parseFloat(document.getElementById("L").value);
+    let n = parseInt(document.getElementById("n").value);
+    let f = n * v / (2 * L);
+
+    if(isPlaying){
+        startSound(f);
+    } else {
+        stopSound();
+    }
+}
 
 function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -57,40 +125,49 @@ function draw(){
         "f = " + f.toFixed(2) + " Hz";
     document.getElementById("Lval").innerText = L.toFixed(2);
 
-    let scale = canvas.width / L;
+    if(isPlaying && oscillator){
+        oscillator.frequency.setValueAtTime(f, audioCtx.currentTime);
+    }
 
-    // batas pipa (atas bawah saja)
+    let maxVisual = canvas.width * 0.85;
+    let minL = 0.2;
+    let maxL = 1.2;
+
+    let pipeLength = ((L - minL)/(maxL-minL))*maxVisual + 100;
+    let offsetX = (canvas.width - pipeLength)/2;
+
+    let scale = pipeLength / L;
+
+    // pipa
     ctx.strokeStyle="#38bdf8";
     ctx.beginPath();
-    ctx.moveTo(0,40);
-    ctx.lineTo(canvas.width,40);
-    ctx.moveTo(0,180);
-    ctx.lineTo(canvas.width,180);
+    ctx.moveTo(offsetX,50);
+    ctx.lineTo(offsetX+pipeLength,50);
+    ctx.moveTo(offsetX,210);
+    ctx.lineTo(offsetX+pipeLength,210);
     ctx.stroke();
 
-    // 🔷 ENVELOPE (penting!)
+    // envelope
     ctx.beginPath();
     for(let x=0;x<=L;x+=0.001){
         let y = Math.abs(Math.cos(n*Math.PI*x/L));
-        let X = x*scale;
-
-        ctx.lineTo(X,110 - y*60);
+        let X = offsetX + x*scale;
+        ctx.lineTo(X,130 - y*70);
     }
     for(let x=L;x>=0;x-=0.001){
         let y = Math.abs(Math.cos(n*Math.PI*x/L));
-        let X = x*scale;
-
-        ctx.lineTo(X,110 + y*60);
+        let X = offsetX + x*scale;
+        ctx.lineTo(X,130 + y*70);
     }
     ctx.strokeStyle="rgba(255,255,255,0.3)";
     ctx.stroke();
 
-    // 🔷 GELOMBANG BERGETAR
+    // gelombang
     ctx.beginPath();
     for(let x=0;x<=L;x+=0.001){
-        let y = Math.cos(n*Math.PI*x/L) * Math.cos(2*Math.PI*f*t);
-        let X = x*scale;
-        let Y = 110 - y*60;
+        let y = Math.cos(n*Math.PI*x/L)*Math.cos(2*Math.PI*f*t);
+        let X = offsetX + x*scale;
+        let Y = 130 - y*70;
 
         if(x===0) ctx.moveTo(X,Y);
         else ctx.lineTo(X,Y);
@@ -98,18 +175,32 @@ function draw(){
     ctx.strokeStyle="#22c55e";
     ctx.stroke();
 
-    // 🔷 PERUT (harus nempel dinding!)
+    // animasi udara
+    let air = Math.cos(2*Math.PI*f*t)*10;
+
+    ctx.beginPath();
+    ctx.arc(offsetX - 15 + air,130,5,0,2*Math.PI);
+    ctx.arc(offsetX + pipeLength + 15 - air,130,5,0,2*Math.PI);
+    ctx.fillStyle="cyan";
+    ctx.fill();
+
+    // watermark di canvas
+    ctx.fillStyle="rgba(255,255,255,0.2)";
+    ctx.font="12px Arial";
+    ctx.fillText("Dwi Yono, S.Pd", 10, 250);
+
+    // perut
     for(let i=0;i<=n;i++){
         let xP = i*L/n;
         ctx.fillStyle="yellow";
-        ctx.fillText("P", xP*scale-5, 50);
+        ctx.fillText("P", offsetX + xP*scale - 5, 60);
     }
 
-    // 🔷 SIMPUL
+    // simpul
     for(let i=0;i<n;i++){
         let xS = (i+0.5)*L/n;
         ctx.fillStyle="red";
-        ctx.fillText("S", xS*scale-5, 170);
+        ctx.fillText("S", offsetX + xS*scale - 5, 200);
     }
 
     t += 0.01;
