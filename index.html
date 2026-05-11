@@ -1,213 +1,230 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Seruling Interaktif Final</title>
-<style>
-body{
-    background:#0f172a;
-    color:white;
-    text-align:center;
-    font-family:Arial;
-}
-canvas{
-    background:#020617;
-    margin-top:20px;
-}
-button{
-    padding:8px 15px;
-    margin-top:10px;
-    font-size:16px;
-}
-.footer{
-    margin-top:15px;
-    font-size:14px;
-    color:#94a3b8;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulasi Pipa Organa Terbuka - Dwi Yono, S.Pd</title>
+    <style>
+        :root {
+            --primary: #f43f5e;
+            --secondary: #38bdf8;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; padding: 10px; }
+        .wrapper { width: 100%; max-width: 800px; }
+        h2 { font-size: 1.2rem; text-align: center; color: var(--primary); margin: 10px 0; text-transform: uppercase; letter-spacing: 1px; }
+
+        .status-bar {
+            background: var(--card);
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px; padding: 15px; border-radius: 12px 12px 0 0;
+            border-bottom: 3px solid var(--primary); font-size: 0.8rem; font-weight: bold; text-align: center;
+        }
+
+        .canvas-box { background: #000; position: relative; width: 100%; height: 300px; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .controls { background: var(--card); padding: 20px; border-radius: 0 0 12px 12px; display: flex; flex-direction: column; gap: 18px; }
+        .control-row { display: flex; flex-direction: column; gap: 8px; }
+        
+        label { font-size: 0.75rem; color: #94a3b8; font-weight: bold; display: flex; justify-content: space-between; }
+        label span { color: var(--secondary); }
+
+        select {
+            background: #334155; color: white; border: 2px solid #475569; padding: 12px;
+            border-radius: 8px; font-size: 1rem; outline: none; cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 1em;
+        }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; height: 10px; background: #334155; border-radius: 5px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: var(--primary); border-radius: 50%; cursor: pointer; }
+
+        .btn-toggle {
+            background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px;
+            font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: 0.3s;
+        }
+        .btn-toggle.active { background: #475569; }
+
+        .copyright { text-align: center; font-size: 0.75rem; color: #64748b; margin-top: 20px; line-height: 1.5; padding-bottom: 20px; border-top: 1px solid #334155; padding-top: 15px; }
+    </style>
 </head>
 <body>
 
-<h2>🎶 Seruling Interaktif (Pipa Organa Terbuka)</h2>
+<div class="wrapper">
+    <h2>Simulasi Pipa Organa Terbuka</h2>
+    
+    <div class="status-bar">
+        <div>Frekuensi:<br><span id="valFreq" style="color:var(--secondary)">440</span> Hz</div>
+        <div>Mode Nada:<br><span id="valMode" style="color:var(--secondary)">Dasar</span></div>
+        <div>&lambda;:<br><span id="valLambda" style="color:var(--secondary)">0.00</span> m</div>
+    </div>
 
-Panjang:
-<input type="range" id="L" min="0.2" max="1.2" step="0.01" value="0.6">
-<span id="Lval">0.60</span>
+    <div class="canvas-box">
+        <canvas id="simCanvas"></canvas>
+    </div>
+    
+    <div class="controls">
+        <div class="control-row">
+            <label>Panjang Pipa (L) <span><span id="dispL">0.39</span> m</span></label>
+            <input type="range" id="pipeLength" min="0.2" max="1.5" step="0.01" value="0.39">
+        </div>
+        
+        <div class="control-row">
+            <label>Pilih Harmonik</label>
+            <select id="harmonicSelect">
+                <option value="1">n = 1 (Nada Dasar)</option>
+                <option value="2">n = 2 (Nada Atas 1)</option>
+                <option value="3">n = 3 (Nada Atas 2)</option>
+                <option value="4">n = 4 (Nada Atas 3)</option>
+                <option value="5">n = 5 (Nada Atas 4)</option>
+            </select>
+        </div>
 
-<br><br>
+        <button id="audioBtn" class="btn-toggle">AKTIFKAN SUARA</button>
+    </div>
 
-Harmonik:
-<select id="n">
-<option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-</select>
-
-<h3 id="freq"></h3>
-
-<button onclick="toggleSound()">🔊 ON / OFF Suara</button>
-
-<canvas id="c" width="800" height="260"></canvas>
-
-<div class="footer">
-    Dibuat oleh: <b>Dwi Yono, S.Pd</b> — Guru Fisika SMAN 1 Karanganyar
+    <div class="copyright">
+        <strong>&copy; 2026 Dwi Yono, S.Pd</strong><br>
+        Guru Fisika - SMAN 1 Karanganyar
+    </div>
 </div>
 
 <script>
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let L = 0.39;
+    let n = 1;
+    let time = 0;
+    let isPlaying = false;
+    let audioCtx, osc, gainNode;
 
-let t = 0;
-const v = 340;
-
-// AUDIO
-let audioCtx = null;
-let oscillator = null;
-let gainNode = null;
-let isPlaying = false;
-
-function startSound(freq){
-    if(!audioCtx){
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function initCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
     }
 
-    oscillator = audioCtx.createOscillator();
-    gainNode = audioCtx.createGain();
+    function update() {
+        L = parseFloat(document.getElementById('pipeLength').value);
+        n = parseInt(document.getElementById('harmonicSelect').value);
+        const freq = (n * 343) / (2 * L);
+        const lambda = (2 * L) / n;
+        const modeText = n === 1 ? "Dasar" : `Atas ${n-1}`;
+        
+        document.getElementById('dispL').innerText = L.toFixed(2);
+        document.getElementById('valFreq').innerText = Math.round(freq);
+        document.getElementById('valMode').innerText = modeText;
+        document.getElementById('valLambda').innerText = lambda.toFixed(2);
 
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.05);
-
-    oscillator.start();
-}
-
-function stopSound(){
-    if(oscillator && gainNode && audioCtx){
-        let now = audioCtx.currentTime;
-
-        gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.05);
-
-        oscillator.stop(now + 0.05);
-        oscillator = null;
-    }
-}
-
-function toggleSound(){
-    isPlaying = !isPlaying;
-
-    let L = parseFloat(document.getElementById("L").value);
-    let n = parseInt(document.getElementById("n").value);
-    let f = n * v / (2 * L);
-
-    if(isPlaying){
-        startSound(f);
-    } else {
-        stopSound();
-    }
-}
-
-function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    let L = parseFloat(document.getElementById("L").value);
-    let n = parseInt(document.getElementById("n").value);
-
-    let f = n*v/(2*L);
-
-    document.getElementById("freq").innerText =
-        "f = " + f.toFixed(2) + " Hz";
-    document.getElementById("Lval").innerText = L.toFixed(2);
-
-    if(isPlaying && oscillator){
-        oscillator.frequency.setValueAtTime(f, audioCtx.currentTime);
+        if (isPlaying && audioCtx) {
+            osc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+        }
     }
 
-    let maxVisual = canvas.width * 0.85;
-    let minL = 0.2;
-    let maxL = 1.2;
+    function draw() {
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, w, h);
 
-    let pipeLength = ((L - minL)/(maxL-minL))*maxVisual + 100;
-    let offsetX = (canvas.width - pipeLength)/2;
+        const pX = 50, pY = h/2 - 45, pH = 90, pW = w - 100;
+        time += 0.12;
 
-    let scale = pipeLength / L;
+        // 1. Gambar Pipa
+        ctx.strokeStyle = "#94a3b8";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pX, pY, pW, pH);
+        ctx.clearRect(pX - 2, pY + 1, 5, pH - 2); 
+        ctx.clearRect(pX + pW - 3, pY + 1, 5, pH - 2);
 
-    // pipa
-    ctx.strokeStyle="#38bdf8";
-    ctx.beginPath();
-    ctx.moveTo(offsetX,50);
-    ctx.lineTo(offsetX+pipeLength,50);
-    ctx.moveTo(offsetX,210);
-    ctx.lineTo(offsetX+pipeLength,210);
-    ctx.stroke();
+        // 2. Gelombang Stasioner
+        const vib = Math.sin(time);
+        ctx.strokeStyle = "#f43f5e";
+        ctx.lineWidth = 2.5;
 
-    // envelope
-    ctx.beginPath();
-    for(let x=0;x<=L;x+=0.001){
-        let y = Math.abs(Math.cos(n*Math.PI*x/L));
-        let X = offsetX + x*scale;
-        ctx.lineTo(X,130 - y*70);
-    }
-    for(let x=L;x>=0;x-=0.001){
-        let y = Math.abs(Math.cos(n*Math.PI*x/L));
-        let X = offsetX + x*scale;
-        ctx.lineTo(X,130 + y*70);
-    }
-    ctx.strokeStyle="rgba(255,255,255,0.3)";
-    ctx.stroke();
+        for(let s of [-1, 1]) {
+            ctx.beginPath();
+            for(let x = 0; x <= pW; x++) {
+                const k = (n * Math.PI) / pW;
+                const y = Math.cos(k * x) * (pH/2.3) * vib * s;
+                if(x === 0) ctx.moveTo(pX + x, h/2 + y);
+                else ctx.lineTo(pX + x, h/2 + y);
+            }
+            ctx.stroke();
+        }
 
-    // gelombang
-    ctx.beginPath();
-    for(let x=0;x<=L;x+=0.001){
-        let y = Math.cos(n*Math.PI*x/L)*Math.cos(2*Math.PI*f*t);
-        let X = offsetX + x*scale;
-        let Y = 130 - y*70;
+        // 3. Label P (Perut) dan S (Simpul)
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        
+        // Label PERUT (Antinode) -> Muncul di titik maksimum cosinus
+        ctx.fillStyle = "#f43f5e"; // Merah
+        for (let i = 0; i <= n; i++) {
+            const xPos = pX + (i * pW / n);
+            ctx.fillText("P", xPos, pY - 15);
+        }
 
-        if(x===0) ctx.moveTo(X,Y);
-        else ctx.lineTo(X,Y);
-    }
-    ctx.strokeStyle="#22c55e";
-    ctx.stroke();
+        // Label SIMPUL (Node) -> Muncul di titik nol cosinus
+        ctx.fillStyle = "#38bdf8"; // Biru Muda
+        for (let i = 0; i < n; i++) {
+            const xPos = pX + (i * pW / n) + (pW / (2 * n));
+            ctx.fillText("S", xPos, pY - 15);
+        }
 
-    // animasi udara
-    let air = Math.cos(2*Math.PI*f*t)*10;
-
-    ctx.beginPath();
-    ctx.arc(offsetX - 15 + air,130,5,0,2*Math.PI);
-    ctx.arc(offsetX + pipeLength + 15 - air,130,5,0,2*Math.PI);
-    ctx.fillStyle="cyan";
-    ctx.fill();
-
-    // watermark di canvas
-    ctx.fillStyle="rgba(255,255,255,0.2)";
-    ctx.font="12px Arial";
-    ctx.fillText("Dwi Yono, S.Pd", 10, 250);
-
-    // perut
-    for(let i=0;i<=n;i++){
-        let xP = i*L/n;
-        ctx.fillStyle="yellow";
-        ctx.fillText("P", offsetX + xP*scale - 5, 60);
-    }
-
-    // simpul
-    for(let i=0;i<n;i++){
-        let xS = (i+0.5)*L/n;
-        ctx.fillStyle="red";
-        ctx.fillText("S", offsetX + xS*scale - 5, 200);
+        // 4. Partikel Udara
+        const step = 15;
+        for (let x = 0; x <= pW; x += step) {
+            for (let y = 12; y < pH; y += step) {
+                const k = (n * Math.PI) / pW;
+                const dx = Math.cos(k * x) * 15 * Math.sin(time);
+                ctx.fillStyle = "#38bdf8";
+                ctx.globalAlpha = 0.35;
+                ctx.beginPath();
+                ctx.arc(pX + x + dx, pY + y, 1.8, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(draw);
     }
 
-    t += 0.01;
-    requestAnimationFrame(draw);
-}
+    document.getElementById('audioBtn').addEventListener('click', function() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            osc = audioCtx.createOscillator();
+            gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            gainNode.gain.value = 0;
+            osc.start();
+        }
+        if (!isPlaying) {
+            this.innerText = "MATIKAN SUARA";
+            this.classList.add('active');
+            gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.1);
+            isPlaying = true;
+            update();
+        } else {
+            this.innerText = "AKTIFKAN SUARA";
+            this.classList.remove('active');
+            gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+            isPlaying = false;
+        }
+    });
 
-draw();
+    window.addEventListener('resize', initCanvas);
+    document.getElementById('pipeLength').addEventListener('input', update);
+    document.getElementById('harmonicSelect').addEventListener('change', update);
+
+    initCanvas();
+    update();
+    draw();
 </script>
 
 </body>
